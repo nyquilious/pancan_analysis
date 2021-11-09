@@ -16,6 +16,10 @@ library(tidyverse)
 library(kableExtra)
 ```
 
+\bigskip
+
+The code to reproduce this report is available [on Github](https://github.com/Katsevich-Teaching/final-project-template).
+
 \newpage
 
 # Executive Summary
