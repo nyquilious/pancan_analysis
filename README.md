@@ -1,6 +1,4 @@
-# STAT  471 Final Project: COVID-19 and County Health
-
-# Executive Summary 
+# COVID-19 and County Health<br/>STAT  471 Final Project<br/>Seokyoon Chang, Jessica Mixon, Maayan Waldman<br/>May 2, 2021
 
 Despite the growing body of research focused on understanding the progression of COVID-19, there is still much to be learned about population-level health factors that make some populations more susceptible to COVID-19 spread, case severity, and mortality. Hence, for our final project, we decided to look into various measures of health across US counties and analyze which factors were most predictive of case fatality rate throughout 2020, the first year of the COVID-19 pandemic. While only analyzing 2020 COVID-19 data only inherently limits our results, we also note 2020 data may actually be most likely to reflect differences in healthcare quality across counties, as it was in the early months of the pandemic that many health systems faced unique issues of resource scarcity.
 
