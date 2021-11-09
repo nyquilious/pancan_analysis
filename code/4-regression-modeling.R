@@ -1,6 +1,6 @@
 # load libraries
 library(glmnetUtils)                    # to run ridge and lasso
-source("code/plot_glmnet.R")            # for lasso/ridge trace plots
+source("code/functions/plot_glmnet.R")            # for lasso/ridge trace plots
 
 # read in the training data
 covid_train = read_tsv("data/clean/covid_train.tsv")
