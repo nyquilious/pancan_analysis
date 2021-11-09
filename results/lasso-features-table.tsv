@@ -1,0 +1,14 @@
+feature	coefficient
+median_income	0.2876184634883651
+segregation_nonwhite_white	0.26803917428682056
+unemployment	0.15598308612721185
+severe_ownership_cost	0.1503899970554152
+long_commute_perc	0.12123908690113616
+income_inequality	0.10739029231890711
+inactive_perc	0.09544557508846462
+homeownership	0.08444250905576353
+high_housing_costs	0.07852663418203733
+otherproviders_ratio	0.07530637897429575
+low_birthweight_percentage	0.031674706618148286
+flu_vaccine_perc	0.016815257230187227
+air_pollution	3.4220989076147484e-4
