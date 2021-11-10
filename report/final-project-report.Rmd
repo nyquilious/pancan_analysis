@@ -1,12 +1,12 @@
 ---
 title: 'COVID-19 and County Health'
-author: 'Seokyoon Chang, Jessica Mixon, Greta Maayan Waldman'
+author: 'Seokyoon Chang, Jessica Mixon, Greta Maayan Waldman (Edited by Eugene Katsevich)'
 date: 'May 2, 2021'
 output:
   bookdown::pdf_document2:
     number_sections: yes
     toc: yes
-    toc_depth: '3'
+    toc_depth: '2'
 urlcolor: blue
 ---
 
@@ -24,26 +24,28 @@ The code to reproduce this report is available [on Github](https://github.com/Ka
 
 # Executive Summary
 
-Despite the growing body of research focused on understanding the progression of COVID-19, there is still much to be learned about population-level health factors that make some populations more susceptible to COVID-19 spread, case severity, and mortality. Hence, for our final project, we decided to look into various measures of health across US counties and analyze which factors were most predictive of case fatality rate throughout 2020, the first year of the COVID-19 pandemic. While only analyzing 2020 COVID-19 data only inherently limits our results, we also note 2020 data may actually be most likely to reflect differences in healthcare quality across counties, as it was in the early months of the pandemic that many health systems faced unique issues of resource scarcity.
+**Problem.** Despite the growing body of research focused on understanding the progression of COVID-19, there is still much to be learned about population-level health factors that make some populations more susceptible to COVID-19 spread, case severity, and mortality. Hence, for our final project, we decided to look into various measures of health across US counties and analyze which factors were most predictive of case fatality rate throughout 2020, the first year of the COVID-19 pandemic. While only analyzing 2020 COVID-19 data only inherently limits our results, we also note 2020 data may actually be most likely to reflect differences in healthcare quality across counties, as it was in the early months of the pandemic that many health systems faced unique issues of resource scarcity.
 
-Our dataset pulled data from two sources: a New York Times time series dataset which includes cumulative counts of COVID-19 cases and deaths at the county level, and data from County Health Rankings & Roadmaps, a program focused on collecting county-level data on a variety of health determinants. For the latter data source, we pulled 2019 or older data from various datasets on their website, as many key variables we wanted to study are still missing for 2020 and we assume that most county-level health determinants stayed very similar from 2019 to 2020. Our explanatory variables span the four main categories of health factors that the program identifies: health behaviors (e.g., smoking, sexual activity), clinical care (e.g., flu vaccine rate), social and economic factors (e.g., unemployment rate), and physical environment (e.g., degree of air pollution). Our primary response variable of interest was deaths per cases, which we created by dividing county-level deaths by count-level cases.
+**Data.** Our dataset pulled data from two sources: a New York Times time series dataset which includes cumulative counts of COVID-19 cases and deaths at the county level, and data from County Health Rankings & Roadmaps, a program focused on collecting county-level data on a variety of health determinants. For the latter data source, we pulled 2019 or older data from various datasets on their website, as many key variables we wanted to study are still missing for 2020 and we assume that most county-level health determinants stayed very similar from 2019 to 2020. Our explanatory variables span the four main categories of health factors that the program identifies: health behaviors (e.g., smoking, sexual activity), clinical care (e.g., flu vaccine rate), social and economic factors (e.g., unemployment rate), and physical environment (e.g., degree of air pollution). Our primary response variable of interest was deaths per cases, which we created by dividing county-level deaths by count-level cases.
 
-Before exploring our data or running any analyses, we split our data into a training dataset and a test dataset, with the test dataset reserved for assessing and comparing model performance. Then, we explored our data to check for normality assumptions necessary for linear regression and to assess correlations between variables and between variables and the response. In order to build an optimal predictive model, we then built six different cross-validated models: ordinary least squares, ridge regression, LASSO regression, elastic net regression, random forest, and boosting. Of the regression models, elastic net had the lowest test error and of the tree-based models, the boosted model had the lowest test error (as well as the lowest test error overall).
+**Analysis.** Before exploring our data or running any analyses, we split our data into a training dataset and a test dataset, with the test dataset reserved for assessing and comparing model performance. Then, we explored our data to check for normality assumptions necessary for linear regression and to assess correlations between variables and between variables and the response. In order to build an optimal predictive model, we then built six different cross-validated models: ordinary least squares, ridge regression, LASSO regression, elastic net regression, random forest, and boosting. Of the regression models, elastic net had the lowest test error and of the tree-based models, the boosted model had the lowest test error (as well as the lowest test error overall).
 
-Interestingly, we found that the boosted and elastic net regression both pointed to similar types of variables as the strongest predictors of deaths per cases. Specifically, our optimal boosted model revealed that variables related to residential segregation and unemployment emerged as the most significant predictors, revealing that structural economic and health access inequalities were more predictive of COVID-19 deaths per cases than other variables. We hope that this analysis can inform policies aimed at improving health outcome determinants, both in the context of COVID-19 and more generally going forward. 
+**Conclusions.** Interestingly, we found that the boosted and elastic net regression both pointed to similar types of variables as the strongest predictors of deaths per cases. Specifically, our optimal boosted model revealed that variables related to residential segregation and unemployment emerged as the most significant predictors, revealing that structural economic and health access inequalities were more predictive of COVID-19 deaths per cases than other variables. We hope that this analysis can inform policies aimed at improving health outcome determinants, both in the context of COVID-19 and more generally going forward. 
 
 # Introduction
 
-Coronavirus disease (COVID-19) has had a devastating global impact, with a cumulative total of 149,987,772 confirmed cases and 3,157,594 deaths worldwide as of April 28, 2021.^[Coronavirus Cases: Worldometer. (n.d.). https://www.worldometers.info/coronavirus/. 
+**Background.** Coronavirus disease (COVID-19) has had a devastating global impact, with a cumulative total of 149,987,772 confirmed cases and 3,157,594 deaths worldwide as of April 28, 2021.^[Coronavirus Cases: Worldometer. (n.d.). https://www.worldometers.info/coronavirus/. 
 ] About a fifth of these cases have been in the United States, with a recent count of 32,551,440 cases and 582,668 deaths.^[Ibid.] With these staggering numbers still increasing despite recent large-scale vaccine rollouts, it is of vital importance to utilize various data sources to understand both the progression of COVID-19 thus far as well as the highest risk factors for contracting COVID-19. Furthermore, a thorough analysis of COVID-19 rates and predictive factors may help inform strategies to improve public health policies that could mitigate the negative impact of a future pandemic, which many scientists say is not a matter of if but of when.^[Robbins, J. (2021, January 4). Heading Off the Next Pandemic. Kaiser Health News. https://khn.org/news/infectious-disease-scientists-preventing-next-pandemic/. ]
 
 Past research has shown that infectious diseases are influenced by a variety of factors. Obesity, for instance, is associated with a higher likelihood of contracting influenza A, and seasonal temperature changes have shown to be predictive of the 2003 severe acute respiratory syndrome (SARS).^[Tian, T., Zhang, J., Hu, L., Jiang, Y., Duan, C., Li, Z., ... & Zhang, H. (2021). Risk factors associated with mortality of COVID-19 in 3125 counties of the United States. Infectious diseases of poverty, 10(1), 1-8.] The CDC is currently in the process of identifying potential risk factors for severe COVID-19 illness,^[Centers for Disease Control and Prevention. (n.d.). Assessing Risk Factors for Severe COVID-19 Illness. Centers for Disease Control and Prevention. https://www.cdc.gov/coronavirus/2019-ncov/covid-data/investigations-discovery/assessing-risk-factors.html.] and some that have already been identified include heart disease, diabetes, and pregnancy.^[Centers for Disease Control and Prevention. (n.d.). Certain Medical Conditions and Risk for Severe COVID-19 Illness. Centers for Disease Control and Prevention. https://www.cdc.gov/coronavirus/2019-ncov/need-extra-precautions/people-with-medical-conditions.html.] Yet despite these efforts, there is still much to be learned. Specifically, there is still insufficient research to explain the differences in COVID-19 susceptibility and mortality that exist not just on the individual level but also on broader population levels. 
 
-Given our knowledge of the capacity for a variety of factors to influence infectious disease spread as well as the fact that different counties in the US have differing levels of baseline health factors, we sought to investigate how rates of COVID-19 cases and deaths across the US are affected by various measures of community health. Specifically, we were interested in which kinds of factors (e.g., clinical, behavioral, health)—and which specific variables—are most predictive of deaths per cases (also known as case fatality rate). We hope that our analysis will contribute to the growing body of research on COVID-19 risk factors by expanding our understanding of COVID-19 and supporting efforts to mitigate the risk of future pandemics. Our results also shed light on the importance of analyzing social determinants of health in efforts to improve health outcomes. 
+**Analysis goals.** Given our knowledge of the capacity for a variety of factors to influence infectious disease spread as well as the fact that different counties in the US have differing levels of baseline health factors, we sought to investigate how rates of COVID-19 cases and deaths across the US are affected by various measures of community health. Specifically, we were interested in which kinds of factors (e.g., clinical, behavioral, health)—and which specific variables—are most predictive of deaths per cases (also known as case fatality rate). 
 
-# Data Description and Exploration
+**Significance.** We hope that our analysis will contribute to the growing body of research on COVID-19 risk factors by expanding our understanding of COVID-19 and supporting efforts to mitigate the risk of future pandemics. Our results also shed light on the importance of analyzing social determinants of health in efforts to improve health outcomes. 
 
-## Data Sources
+# Data
+
+## Data sources
 
 Our dataset merged data from two sources: a dataset on US county-level health and a COVID-19 dataset that includes average cases and deaths per county. Each data source includes data from January 2020 to December 2020. 
 
@@ -51,11 +53,11 @@ The data regarding the health status of each county comes from County Health Ran
 
 The other dataset we drew from is the New York Times COVID-19 tracking dataset that includes cumulative COVID-19 cases and deaths in the United States at the county level.^[The New York Times Github. (n.d.) nytimes/covid-19-data. https://github.com/nytimes/covid-19-data] This time series dataset, compiled from state and local governments and health departments, includes data beginning from the first reported coronavirus case in Washington on Jan. 21, 2020. Times notes that because of the widespread shortage of testing in the first few months of the pandemic, the true COVID-19 prevalence—for those few months especially—may not be accurately represented in the data.  
 
-## Data Cleaning Process
+## Data cleaning
 
 Our central task in the data cleaning phase of the project was merging the data from the two sources described above. Both data sources provided their respective data on a county level (classified as a 5-digit FIPS code). For each county in the New York Times COVID-19 dataset, the numbers of deaths and cases of COVID-19 were aggregated across 2020. We merged the two datasets on the county level, and then calculated the explanatory variables in accordance with the County Health Rankings Data Documentation. For the most part, the latter step consisted of dividing raw counts of a variable by the population of interest for the variable to calculate a percentage. 
 
-## Descriptions of Variables
+## Data description
 
 ### Observations
 
@@ -69,13 +71,13 @@ Our response variable is the cumulative COVID-19 deaths per cases for each count
 
 Drawing on data from County Health Rankings & Roadmaps, we included 41 explanatory variables in our analysis, which fall into four main categories: health behaviors, clinical care, social and economic factors, and physical environment. For a detailed specification of these variables, refer to Appendix \@ref(appendix).
 
-## Allocation of Data for Training and Testing
+## Data allocation
 
 Before building our predictive models, we first removed observations from the dataset for which any variables had NA values. We decided to do this for consistency purposes, as some data analysis methods we employed require that no variables contain NA fields. We then split our dataset into two subsets: a training dataset used for building our predictive models and a test dataset used for evaluating our models. We used an 80-20 split, such that the training dataset consists of 80% of our observations and the dataset consists of 20% of our observations. Although this train-test split was performed separately for each class of methods, we utilized a random seed to ensure that each split led to the same results. 
 
-## Exploratory Data Analysis 
+## Data exploration
 
-### Response Variable
+### Response
 
 We first sought to understand the response variable’s distribution. As seen in the histogram of deaths variable (Figure \@ref(fig:response-histogram)), the data appears to be right-skewed, with some counties exceeding a death per cases rate of 0.1.  The median deaths per cases is 0.018. We proceeded to determine which counties had extreme response rates by looking at the sorted data. The sorted data (Table \@ref(tab:top-10-counties)) shows that aggregated across 2020, the highest rates of deaths per cases were primarily in northeastern states such as New York, New Jersey, and Connecticut.
 
@@ -97,15 +99,15 @@ read_tsv("../results/top-10-counties-data.tsv") %>%
 
 [Omitted from template.]
 
-# Model Building, Evaluation, and Interpretation
+# Modeling
 
-## Ordinary Least Squares and Shrinkage Methods
+## Regression-based methods
 
-### Ordinary Least Squares
+### Ordinary least squares
 
 [Omitted from template.]
 
-### Ridge Regression, LASSO Regression, and Elastic Net Regression
+### Penalized regression
 
 Despite the ordinary least squares method seeming to work well, we realized that fitting a linear model with so many explanatory variables might incur a large cost in variance and lead to suboptimal predictions. Hence, we decided to build and evaluate shrinkage models with the hopes of getting a more parsimonious and interpretable model. We ran three cross-validated regressions for which optimal values of lambda were chosen according to the one-standard-error rule: ridge, LASSO (Least Absolute Shrinkage and Selection Operator), and elastic net. 
 
@@ -132,17 +134,18 @@ read_tsv("../results/lasso-features-table.tsv") %>%
   kable_styling(position = "center")
 ```
 
-## Tree-based Methods
+## Tree-based methods
 
 [Omitted from template.]
 
-### Random Forest
+### Random forest
 
 ### Boosting
 
-## Model Comparison
+# Conclusions
 
-Table \@ref(tab:model-evaluation) shows the test RMSE for all the methods considered. [Discussion of model comparison omitted from this template.]
+## Method comparison
+
 ```{r model-evaluation, message = FALSE, echo = FALSE}
 read_tsv("../results/model-evaluation.tsv") %>%
   kable(format = "latex", row.names = NA,
@@ -151,16 +154,12 @@ read_tsv("../results/model-evaluation.tsv") %>%
   kable_styling(position = "center")
 ```
 
-# Conclusions
-
-## Comparison of Method Performances
-
-As shown in the table above, except for the OLS, the random forest and the boosted model have the lowest test errors. This is reasonable given these models’ tendencies to have high predictive accuracy. Between the two, the boosted model has the lowest test error, with a mean squared error of 0.000139, but it is closely followed by random forest, which has a mean squared error of 0.00141. Notably, however, the ridge, LASSO, and elastic net regressions perform about as well, with test MSEs of 0.000158, 0.000164, and 0.000161, respectively. Although OLS has the lowest training and test error, its adjusted R-squared value was only about 0.3, and there were too many features given the number of observations.
+Table \@ref(tab:model-evaluation) shows the test RMSE for all the methods considered. Except for the OLS, the random forest and the boosted model have the lowest test errors. This is reasonable given these models’ tendencies to have high predictive accuracy. Between the two, the boosted model has the lowest test error, with a mean squared error of 0.000139, but it is closely followed by random forest, which has a mean squared error of 0.00141. Notably, however, the ridge, LASSO, and elastic net regressions perform about as well, with test MSEs of 0.000158, 0.000164, and 0.000161, respectively. Although OLS has the lowest training and test error, its adjusted R-squared value was only about 0.3, and there were too many features given the number of observations.
 
 Regardless of these differences in test MSE, the methods overlap significantly in their identification of important variables from the larger set. For instance, the elastic net regression selects the following variables, which are also selected by LASSO and deemed significant in the OLS model: other providers ratio, unemployment, income inequality, housing overcrowding, residential segregation—non-White/White, homeownership, and physical inactivity. The random forest and boosting models both include low birthweight percentage, median income, and unemployment percentage in the top 10 most important variables, as measured by their contributions to node purity. 
 
 
-## Overall Conclusions, Recommendations, and Takeaways for Stakeholders
+## Takeaways
 
 Our results point to a few key determinants of health that, given their impact on COVID-19 deaths per cases rates in 2020, policymakers should consider when aiming to improve factors that would improve health overall but also potentially mitigate the mortality risk of another pandemic. The boosted model, which had the strongest predictive performance, suggests that residential segregation between non-white and white residents is the most important variable in predicting a county’s COVID-19 deaths per cases rate. The unemployment rate, availability of physical exercise opportunities, and measures of home ownership burden variables were also highly important in this model. These variables are identified across all models suggesting these relationships are robust. Residential segregation, unemployment, and home ownership burden are socioeconomic factors that affect an individual’s ability to access and pay for healthcare. In that regard, it is unsurprising that these factors would have a greater ability to predict differences in COVID-19 case fatalities across different counties in the United States. While some behavioral variables are also found to be significant (including STI incidence, high school completion, and others identified in the elastic net and lasso regressions), the variable importance ranking from the boosted model provides a highly interpretable hierarchy of the most influential factors from the greater set.
 
@@ -169,17 +168,17 @@ Given that socioeconomic factors were the strongest predictors of deaths per cas
 As the world shifts towards herd immunity as vaccines are made more widely available, it is important to reflect upon how the pandemic has asymmetrically impacted different counties across the country. Our results suggest that structural vulnerabilities can be captured by measures of inequality and poverty; the identification of counties high on these factors should serve as a warning for future vulnerability to health crises. These analyses can serve to protect already vulnerable communities from suffering disproportionately in the future. 
 
 
-## Limitations and Future Directions 
+## Limitations
 
-### Dataset Limitations
+### Dataset limitations
 
 As it is detailed in the Frequently Asked Questions page of County Health Rankings & Roadmaps program  website,^[County Health Rankings & Roadmaps. (n.d.) Frequently Asked Questions. https://www.countyhealthrankings.org/explore-health-rankings/faq-page] all of the variables are from 2019 or earlier. Thus, it is possible that the values of the variables assessed were different in 2020, meaning that the interpretation of our analysis may need to be taken with a grain of salt. Regardless, given that we analyzed data on the county level, it is unlikely that any county experienced enough drastic change over the course of the year to significantly affect our analysis. Furthermore, our dataset has a large number of observations to account for potential variability, although notably, many observations had to be removed as some of the R packages used to build some of our models required that no NA values were present in the data. In other words, since each observation represents a different US county, many counties were left out of our analysis. Another limitation is that, as described in the Exploratory Data Analysis section, there is evidence of correlation amongst some of our explanatory variables. This means that some variables can be confounding variables, which mask or distort the relationship between measured variables. Also, variables selected in the LASSO regression and elastic net regression as well as variables marked important in the tree methods might be misleading in that, given how variable selection works, it is possible that some selected variables are simply representative of a larger group of correlated variables. 
 
-### Analysis Limitations
+### Analysis limitations
 
 While splitting the data into training and testing datasets allows for a more unbiased test of the models, we recognize that our conclusions inherently contain some randomness due to the random split of the data. In other words, splitting the data again using a different random seed may have yielded different p-values in the OLS regression, different selected variables in the shrinkage methods, and different variables selected as important in the tree-based methods. Next, although we provide different methods for robust interpretation of the variables, our analysis incorporates only a specific subset of health related variables. The results of the analysis might change dramatically if we were to incorporate other variables. For example, as mentioned in the Exploratory Data Analysis, states in the northeastern part of the United States suffered from a high rate of COVID-19 cases and deaths in 2020. This may not have been because these states performed poorly in the health variables mentioned above. Rather, it may be due to the fact that these states are densely populated and hence were more susceptible to disease spread at the outset of the COVID-19 pandemic. In other words, other factors like geographic or demographic variables can hugely impact case fatality rate. 
 
-### Recommended Follow-Up Analyses
+## Follow-ups
 
 To compensate for the limitations mentioned above, more extensive analysis can be done as we acquire more data from 2020 and 2021. Not only can we extend our analysis by utilizing the most up-to-date datasets, but we can also examine how COVID-19 cases and deaths have affected various health factors of each county. In other words, the explanatory and response variables can be reversed to conduct more dynamic data analyses. Next, given that many observations needed to be omitted in our dataset as they contained NA fields, we recommend that our analyses be reconducted once the missing data is collected. Finally, future work on the social determinants of health in the context of COVID-19 might also look at different population levels such as states, bigger geographical regions in America, or even different countries.
 
