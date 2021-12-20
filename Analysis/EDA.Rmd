@@ -1,0 +1,67 @@
+---
+title: "EDA"
+author: "Nikhil Joshi"
+date: "12/10/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)  # tidyverse
+library(ggrepel)    # for scatter plot point labels
+library(kableExtra) # for printing tables
+library(cowplot)    # for side by side plots
+```
+
+```{r load-data}
+clean_data = read.csv("../dirty_data.csv") 
+clean_data = tibble(clean_data)
+```
+
+```{r}
+clean_data$Metastasis = clean_data$Metastasis %>% as.factor()
+
+# boxplot of age vs metastasis
+clean_data %>%
+  na.omit(.) %>%
+  ggplot() +
+  geom_boxplot(aes(x = Metastasis, y = Age)) +
+  theme_bw()
+```
+
+```{r}
+clean_data %>%
+  na.omit(.) %>%
+  filter(Gender == "F" | Gender == "M") %>%
+  ggplot() +
+  geom_boxplot(aes(x = Gender, y = Age)) +
+  theme_bw()
+```
+
+```{r}
+# age distribution
+median_age = clean_data %>%
+  na.omit(.) %>%
+  summarise(median(Age)) %>%
+  pull()
+
+clean_data %>%
+  na.omit(.) %>%
+  ggplot() +
+  geom_histogram(aes(x = Age)) +
+  geom_vline(aes(xintercept = median_age), color = "red", linetype = "dashed") +
+  theme_bw() + ylab("Number of People at Age Group")
+#bin width set to 30. slightly left skewed
+```
+
+```{r}
+#distribution of metastasis vs non-metastasis patients
+clean_data %>%
+  ggplot() +
+  geom_histogram(aes(x = Metastasis), stat = "count") +
+  theme_bw() + ylab("Number of Patients")
+#table should be added -> class imbalance is clear.
+```

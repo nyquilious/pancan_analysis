@@ -1,0 +1,41 @@
+---
+title: "BOOSTING KABLE"
+author: "Nikhil Joshi"
+date: "12/19/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(gbm)
+library(tidyverse)
+library(kableExtra)
+```
+
+```{r, cache = TRUE}
+set.seed(1)
+gbm_fit_2 = gbm(Metastasis ~ .,
+              distribution = "bernoulli",
+              n.trees = 200,
+              interaction.depth = 2,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = pancan_train_boosting)
+```
+
+
+```{r}
+gbm_fit_optimal = gbm_fit_2
+optimal_num_trees = gbm.perf(gbm_fit_2, plot.it = FALSE)
+```
+
+```{r}
+summary(gbm_fit_optimal, n.trees = optimal_num_trees, plotit = FALSE) %>%
+  kable(format = "latex", row.names = NA, 
+        booktabs = TRUE, digits = 2, 
+        col.names = c("Variables", "Relative Importance")) %>%
+  kable_styling(position = "center")
+```

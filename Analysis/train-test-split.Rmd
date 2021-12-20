@@ -1,0 +1,77 @@
+---
+title: "Train-Test Split"
+author: "Nikhil Joshi"
+date: "12/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(class)
+library(pROC)
+library(glmnetUtils)
+library(ROSE)
+```
+
+```{r}
+clean_data = read.csv("../dirty_data 3.csv")
+
+clean_data = as_tibble(clean_data)
+```
+
+```{r}
+set.seed(5) # seed set for reproducibility (DO NOT CHANGE)
+n = nrow(clean_data)
+train_samples = sample(1:n, round(0.8*n))
+pancan_train = clean_data[train_samples,]
+pancan_test = clean_data[-train_samples,]
+```
+
+```{r}
+#EDA of train set
+
+pancan_train %>%
+  ggplot() +
+  geom_bar(aes(x = Metastasis)) +
+  theme_bw() + ylab("Number of Patients")
+
+pancan_test %>%
+  ggplot() +
+  geom_bar(aes(x = Metastasis)) +
+  theme_bw() + ylab("Number of Patients")
+
+tibble(Dataset = c("Train", "Test"), "Rate of Metastasis" = c(mean(pancan_train$Metastasis), mean(pancan_test$Metastasis)))
+
+pancan_train %>%
+  filter(Gender == "F" | Gender == "M") %>%
+  na.omit(.) %>%
+  ggplot() + 
+  geom_boxplot(aes(x = Gender, y = Age)) +
+  theme_bw()
+
+#relatively similar rates of metastasis in datasets
+```
+
+```{r}
+pancan_train = pancan_train %>% select(-Gender, - Age) 
+pancan_train = pancan_train %>% na.omit(.)
+pancan_test = pancan_test %>% select(-Gender, -Age)
+pancan_test = pancan_test %>% na.omit(.)
+```
+
+```{r}
+pancan_train = pancan_train %>% select(-Sample)
+pancan_train_upsampled <- ROSE(Metastasis ~ ., data = pancan_train, seed = 1)$data
+table(pancan_train_upsampled$Metastasis)
+```
+
+```{r}
+write_csv(pancan_train_upsampled, "pancan.train_upsampled.csv")
+write_csv(pancan_test, "pancan.test.csv")
+```

@@ -1,0 +1,98 @@
+---
+title: "Lasso Regression"
+author: "Nikhil Joshi"
+date: "12/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(pROC)
+library(glmnetUtils)
+```
+
+```{r}
+source("../../functions/plot_glmnet.R")
+```
+
+```{r}
+pancan_train_lasso = read.csv("pancan.train_upsampled.csv")
+pancan_test_lasso = read.csv("pancan.test.csv")
+```
+
+```{r}
+install.packages("lares")
+library(lares)
+```
+
+```{r}
+corr_cross(pancan_train_lasso, # name of dataset
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 10 # display top 10 couples of variables (by correlation coefficient)
+)
+```
+
+```{r}
+set.seed(1)
+lasso_fit = cv.glmnet(Metastasis ~ .,       # formula notation, as usual
+                      alpha = 1,                      # alpha = 0 means lasso
+                      nfolds = 15,                    # number of CV folds
+                      family = "binomial",            # logistic regression
+                      type.measure = "class",         # use misclassification error
+                      data = pancan_train_lasso) # train on default_train data
+
+plot(lasso_fit)
+
+plot_glmnet(lasso_fit, pancan_train_lasso, features_to_plot = 10)
+```
+
+```{r}
+probabilities = predict(lasso_fit,                        # fit object
+                        newdata = pancan_test_lasso, # new data to test on
+                        s = "lambda.1se",                 # value of lambda to use
+                        type = "response") %>%            # output probabilities
+  as.numeric()      
+
+```
+
+```{r}
+# threshhold probabilities
+
+predictions = as.numeric(probabilities > 0.5)
+
+pancan_test_lasso = pancan_test_lasso %>%
+  mutate(predicted_metastasis = predictions)
+
+misclass_rate_lasso = pancan_test_lasso %>%
+  summarise(mean(Metastasis != predicted_metastasis)) %>% pull()
+
+pancan_test_lasso %>%
+  select(Metastasis, predicted_metastasis) %>%
+  table()
+
+```
+
+```{r}
+#AUC
+roc_data = roc(pancan_test_lasso %>% pull(Metastasis), 
+               probabilities) 
+
+tibble(FPR = 1-roc_data$specificities,
+       TPR = roc_data$sensitivities) %>%
+  ggplot(aes(x = FPR, y = TPR)) + 
+  geom_line() + 
+  geom_abline(slope = 1, linetype = "dashed") +
+#  geom_point(x = fpr, y = 1-fnr, colour = "red") +
+  theme_bw()
+
+# print the AUC
+roc_data$auc
+
+```

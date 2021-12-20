@@ -1,0 +1,57 @@
+---
+title: "Decision_Pruned"
+author: "Nikhil Joshi"
+date: "12/13/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rpart)             # install.packages("rpart")
+library(rpart.plot)        # install.packages("rpart.plot")
+library(tidyverse)
+```
+
+```{r}
+pancan_train_decision = read.csv("pancan.train_upsampled.csv")
+pancan_test_decision = read.csv("pancan.test 2.csv")
+```
+
+```{r}
+tree_fit = rpart(Metastasis ~ .,
+method = "class", # classification
+parms = list(split = "gini"), # Gini index for splitting 
+data = pancan_test_decision)
+```
+
+```{r}
+cp_table = printcp(tree_fit) %>% as_tibble()
+```
+
+```{r}
+cp_table %>%
+  ggplot(aes(x = nsplit+1, y = xerror,
+             ymin = xerror - xstd, ymax = xerror + xstd)) +
+  geom_point() + geom_line() +
+  geom_errorbar(width = 0.2) +
+  xlab("Number of terminal nodes") + ylab("CV error") +
+  geom_hline(aes(yintercept = min(xerror)), linetype = "dashed") +
+  theme_bw()
+```
+
+```{r}
+optimal_tree_info = cp_table %>%
+  filter(xerror - xstd < min(xerror)) %>%
+  arrange(nsplit) %>%
+  head(1)
+
+optimal_tree = prune(tree_fit, cp = optimal_tree_info$CP)
+rpart.plot(optimal_tree)
+
+pred = predict(optimal_tree, newdata = pancan_test_decision, type = "class")
+
+mean(pred != pancan_test_decision$Metastasis)
+```

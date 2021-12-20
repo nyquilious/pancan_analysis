@@ -1,0 +1,94 @@
+---
+title: "Ridge Regression"
+author: "Nikhil Joshi"
+date: "12/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(glmnetUtils)
+library(ROSE)
+library(pROC)
+#install.packages("ROSE")
+```
+
+```{r}
+source("../../functions/plot_glmnet.R")
+```
+
+```{r}
+pancan_train_ridge = read.csv("pancan.train_upsampled.csv")
+pancan_test_ridge = read.csv("pancan.test.csv")
+
+pancan_train_ridge = pancan_train_ridge %>% select(-Age, -Gender, -Sample.Type, -Sample)
+pancan_test_ridge = pancan_test_ridge %>% select(-Age, -Gender, -Sample.Type, -Sample)
+```
+
+```{r}
+set.seed(1)
+ridge_fit = cv.glmnet(Metastasis ~ .,             
+                      alpha = 0,               # alpha = 0 means ridge
+                      nfolds = 10,             # number of CV folds
+                      family = "binomial",     # to specify logistic regression
+                      type.measure = "class",  # use misclassification error in CV
+                      data = pancan_train_ridge)# train on default_train data
+
+plot(ridge_fit)
+plot_glmnet(ridge_fit, pancan_train_ridge, features_to_plot = 10)
+```
+
+```{r}
+
+probabilities = predict(ridge_fit,               # fit object
+                        newdata = pancan_test_ridge,  # new data to test on
+                        s = "lambda.1se",        # which value of lambda to use
+                        type = "response") %>%   # to output probabilities
+  as.numeric()                                   # convert to vector
+
+```
+
+```{r}
+# threshhold probabilities
+
+probabilities
+predictions = as.numeric(probabilities > 0.50)
+
+pancan_test_ridge = pancan_test_ridge %>%
+  mutate(predicted_metastasis = predictions)
+
+misclass_rate_ridge = pancan_test_ridge %>%
+  summarise(mean(Metastasis != predicted_metastasis)) %>% pull()
+
+pancan_test_ridge %>%
+  select(Metastasis, predicted_metastasis) %>%
+  table()
+
+
+
+fnr = 25/39
+fpr = 19/98
+```
+
+```{r}
+# ROC curve
+roc_data = roc(pancan_test_ridge %>% pull(Metastasis), 
+               probabilities) 
+
+tibble(FPR = 1-roc_data$specificities,
+       TPR = roc_data$sensitivities) %>%
+  ggplot(aes(x = FPR, y = TPR)) + 
+  geom_line() + 
+  geom_abline(slope = 1, linetype = "dashed") +
+#  geom_point(x = fpr, y = 1-fnr, colour = "red") +
+  theme_bw()
+
+# print the AUC
+roc_data$auc
+
+```

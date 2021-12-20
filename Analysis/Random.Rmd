@@ -1,0 +1,15 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(pROC)
+library(glmnetUtils)
+```
+
+```{r}
+pancan_train_decision = read.csv("pancan.train_upsampled.csv")
+pancan_test_decision = read.csv("pancan.test.csv")
+```
