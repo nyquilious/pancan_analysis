@@ -1,0 +1,113 @@
+---
+title: "Boosting"
+author: "Nikhil Joshi"
+date: "12/13/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(gbm) # install.packages("gbm") 
+library(tidyverse)
+library(kableExtra)
+```
+
+```{r}
+pancan_train_boosting = read.csv("pancan.train_upsampled.csv")
+pancan_test_boosting = read.csv("pancan.test.csv")
+
+pancan_train_boosting = pancan_train_boosting %>% select(-Gender, -Sample, -Sample.Type, -Age)
+
+pancan_test_boosting = pancan_test_boosting %>% select(-Sample, -Sample.Type)
+```
+
+```{r}
+set.seed(1)
+gbm_fit = gbm(Metastasis ~ .,
+              distribution = "bernoulli",
+              n.trees = 200,
+              interaction.depth = 1,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = pancan_train_boosting)
+```
+
+```{r}
+set.seed(1)
+gbm_fit_1 = gbm(Metastasis ~ .,
+              distribution = "bernoulli",
+              n.trees = 200,
+              interaction.depth = 1,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = pancan_train_boosting)
+set.seed(1)
+gbm_fit_2 = gbm(Metastasis ~ .,
+              distribution = "bernoulli",
+              n.trees = 200,
+              interaction.depth = 2,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = pancan_train_boosting)
+set.seed(1)
+gbm_fit_3 = gbm(Metastasis ~ .,
+              distribution = "bernoulli",
+              n.trees = 200,
+              interaction.depth = 3,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = pancan_train_boosting)
+# extract CV errors
+ntrees = 200
+cv_errors = bind_rows(
+tibble(ntree = 1:ntrees, cv_err = gbm_fit_1$cv.error, depth = 1),
+  tibble(ntree = 1:ntrees, cv_err = gbm_fit_2$cv.error, depth = 2),
+  tibble(ntree = 1:ntrees, cv_err = gbm_fit_3$cv.error, depth = 3)
+)
+# plot CV errors
+cv_errors %>%
+  ggplot(aes(x = ntree, y = cv_err, colour = factor(depth))) +
+  geom_line() + theme_bw()
+
+
+
+```
+
+
+```{r}
+gbm_fit_optimal = gbm_fit_2
+optimal_num_trees = gbm.perf(gbm_fit_2, plot.it = FALSE)
+```
+
+```{r}
+plot(gbm_fit_optimal, i.var = "SUCNR1", n.trees = optimal_num_trees, type = "response")
+
+plot(gbm_fit_optimal, i.var = "ZBTB16", n.trees = optimal_num_trees, type = "response")
+```
+
+```{r}
+summary(gbm_fit_optimal, n.trees = optimal_num_trees, plotit = FALSE) %>%
+  kable(format = "latex", row.names = NA, 
+        booktabs = TRUE, digits = 2, 
+        col.names = c("Variables", "Relative Importance")) %>%
+  kable_styling(position = "center")
+```
+
+```{r}
+
+gbm_probabilities = predict(gbm_fit_2, n.trees = optimal_num_trees,
+                          type = "response", newdata = pancan_test_boosting)
+
+```
+
+
+```{r}
+
+gbm_predictions = as.numeric(gbm_probabilities > 0.5)
+misclass_rate_boosting = mean(gbm_predictions != pancan_test_boosting$Metastasis)
+```

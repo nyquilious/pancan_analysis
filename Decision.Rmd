@@ -1,0 +1,70 @@
+---
+title: "Classification Tree"
+author: "Nikhil Joshi"
+date: "12/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rpart)             # install.packages("rpart")
+library(rpart.plot)        # install.packages("rpart.plot")
+library(tidyverse)
+```
+
+```{r}
+pancan_train_decision = read.csv("pancan.train_upsampled.csv")
+pancan_test_decision = read.csv("pancan.test.csv")
+```
+
+```{r}
+tree_fit = rpart(Metastasis ~ .,
+method = "class", # classification
+parms = list(split = "gini"), # Gini index for splitting 
+data = pancan_train_decision)
+
+rpart.plot(tree_fit)
+```
+```{r}
+printcp(tree_fit)
+```
+
+```{r}
+cp_table = printcp(tree_fit) %>% as_tibble()
+```
+
+```{r}
+cp_table
+```
+```{r}
+ pred_decision = predict(tree_fit, newdata = pancan_test_decision, type = "class")
+ pred_prob = predict(tree_fit, newdata = pancan_test_decision)
+```
+
+```{r}
+# misclassification error
+misclass_rate_decision = mean(pred_decision != pancan_test_decision$Metastasis)
+
+table(pred_decision, truth = pancan_test_decision$Metastasis)
+```
+
+
+```{r}
+# ROC curve
+roc_data = roc(pancan_test_decision %>% pull(Metastasis), 
+               pred_prob[,2]) 
+
+tibble(FPR = 1-roc_data$specificities,
+       TPR = roc_data$sensitivities) %>%
+  ggplot(aes(x = FPR, y = TPR)) + 
+  geom_line() + 
+  geom_abline(slope = 1, linetype = "dashed") +
+#  geom_point(x = fpr, y = 1-fnr, colour = "red") +
+  theme_bw()
+
+# print the AUC
+roc_data$auc
+```
