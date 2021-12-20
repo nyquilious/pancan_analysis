@@ -1,0 +1,27 @@
+---
+title: "OLS"
+author: "Nikhil Joshi"
+date: "12/18/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(pROC)
+```
+
+```{r}
+pancan_train_logistic = read.csv("pancan.train_upsampled.csv")
+pancan_test_logistic = read.csv("pancan.test.csv")
+```
+
+```{r}
+glm_fit = glm(Metastasis ~ .,
+              family = "binomial",
+              data = pancan_train_logistic)
+summary(glm_fit)
+```

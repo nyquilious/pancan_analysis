@@ -1,0 +1,87 @@
+---
+title: "Elastic Net Regression"
+author: "Nikhil Joshi"
+date: "12/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(pROC)
+library(glmnetUtils)
+```
+
+```{r}
+source("../../functions/plot_glmnet.R")
+```
+
+```{r}
+pancan_train_elnet = read.csv("pancan.train_upsampled.csv")
+pancan_test_elnet = read.csv("pancan.test.csv")
+```
+
+```{r}
+elnet_fit = cva.glmnet(Metastasis ~ .,  # formula notation, as usual
+                       nfolds = 10, # number of folds
+                       family = "binomial",            # logistic regression
+                       type.measure = "class",
+                       data = pancan_train_elnet)   # data to run on
+```
+
+```{r}
+plot_cva_glmnet(elnet_fit)
+```
+```{r}
+elnet_fit_best = extract_best_elnet(elnet_fit)
+
+elnet_fit_best$alpha
+plot(elnet_fit_best)
+plot_glmnet(elnet_fit_best, pancan_train_elnet, features_to_plot = 10)
+```
+
+```{r}
+probabilities = predict(elnet_fit,                        # fit object
+                        alpha = elnet_fit$alpha, # new data to test on
+                        s = "lambda.1se",  
+                        newdata = pancan_test_elnet, # value of lambda to use
+                        type = "response") %>%            # output probabilities
+  as.numeric()      
+
+# threshhold probabilities
+
+predictions = as.numeric(probabilities > 0.5)
+
+pancan_test_elnet = pancan_test_elnet %>%
+  mutate(predicted_metastasis = predictions)
+
+misclass_rate_elnet = pancan_test_elnet %>%
+  summarise(mean(Metastasis != predicted_metastasis)) %>% pull()
+
+pancan_test_elnet %>%
+  select(Metastasis, predicted_metastasis) %>%
+  table()
+
+```
+
+```{r}
+
+roc_data = roc(pancan_test_elnet %>% pull(Metastasis), 
+               probabilities) 
+
+tibble(FPR = 1-roc_data$specificities,
+       TPR = roc_data$sensitivities) %>%
+  ggplot(aes(x = FPR, y = TPR)) + 
+  geom_line() + 
+  geom_abline(slope = 1, linetype = "dashed") +
+#  geom_point(x = fpr, y = 1-fnr, colour = "red") +
+  theme_bw()
+
+# print the AUC
+roc_data$auc
+
+```
