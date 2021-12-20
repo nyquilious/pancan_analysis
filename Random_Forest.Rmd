@@ -1,0 +1,82 @@
+---
+title: "Random"
+author: "Nikhil Joshi"
+date: "12/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(rpart)             # install.packages("rpart")
+library(rpart.plot)        # install.packages("rpart.plot")
+library(tidyverse)
+library(randomForest)      # install.packages("randomForest") 
+```
+
+```{r}
+pancan_train_random = read.csv("pancan.train_upsampled.csv")
+pancan_test_random = read.csv("pancan.test.csv")
+```
+
+```{r}
+rf_fit = randomForest(factor(Metastasis) ~ ., data = pancan_train_random, importance = TRUE)
+```
+
+```{r}
+tibble(oob_error = rf_fit$err.rate[,"OOB"],
+       trees = 1:500) %>%
+  ggplot(aes(x = trees, y = oob_error)) + geom_line() + theme_bw()
+```
+
+```{r, cache=TRUE}
+# might want to cache this chunk!
+mvalues = seq(1,150, by = 10) 
+oob_errors = numeric(length(mvalues)) 
+ntree = 500
+for(idx in 1:length(mvalues)){
+  m = mvalues[idx]
+  rf_fit = randomForest(factor(Metastasis) ~ ., mtry = m, data = pancan_train_random)
+  oob_errors[idx] = rf_fit$err.rate[ntree]
+  print(1)
+}
+tibble(m = mvalues, oob_err = oob_errors) %>%
+  ggplot(aes(x = m, y = oob_err)) +
+  geom_line() + geom_point() +
+  scale_x_continuous(breaks = mvalues) +
+  theme_bw()
+
+```
+
+```{r}
+#tuning the random forest
+
+rf_opt = randomForest(factor(Metastasis) ~ ., mtry = 41, ntree = 5000, data = pancan_train_random)
+
+oob_errors = bind_rows(
+  tibble(ntree = 1:5000, oob_err = rf_opt$err.rate[,"OOB"], m = 41)
+)
+
+oob_errors %>%
+  ggplot(aes(x = ntree, y = oob_err, colour = factor(m))) +
+  geom_line() + theme_bw()
+
+rf_opt_overall = randomForest(factor(Metastasis) ~ ., mtry = 41, ntree = 3000, importance = TRUE, data = pancan_train_random)
+
+varImpPlot(rf_opt_overall, n.var = 10)
+
+```
+
+```{r}
+rf_predictions = predict(rf_fit, newdata = pancan_test_decision)
+
+misclass_rate_rf = mean(rf_predictions != factor(pancan_test_decision$Metastasis))
+```
